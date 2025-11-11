@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caro Pro Online</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+:root{
+  --x:#ff4d4d;--o:#0099ff;--bg:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  --shadow:0 10px 30px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box;font-family:'Poppins',sans-serif}
+body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;background:var(--bg);color:#fff}
+#app{text-align:center;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);padding:30px;border-radius:25px;box-shadow:var(--shadow);max-width:500px;width:90%}
+h1{font-size:2.5rem;margin-bottom:15px;text-shadow:0 2px 4px rgba(0,0,0,.3)}
+.mode-btn{background:#fff;color:#667eea;border:none;padding:14px 28px;margin:8px;font-size:1rem;border-radius:30px;font-weight:700;cursor:pointer;transition:.3s}
+.mode-btn:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+#board{display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px auto;width:min(90vw,350px)}
+.cell{background:rgba(255,255,255,.95);border-radius:15px;font-size:3rem;font-weight:700;height:100px;line-height:100px;cursor:pointer;transition:.2s}
+.cell.x{color:var(--x)}.cell.o{color:var(--o)}
+.cell.winner{background:#2ecc71;color:#fff;animation:pulse .6s infinite}
+@keyframes pulse{50%{transform:scale(1.1)}}
+#score{display:none;justify-content:space-around;margin:15px 0;font-size:1.1rem}
+#info{margin:10px 0;font-size:1.1rem}
+#online{display:none}#online input{padding:10px;border-radius:20px;border:none;margin:5px;width:180px}
+.ctrl-btn{background:#fff;color:#667eea;border:none;padding:10px 20px;margin:5px;border-radius:20px;font-weight:600;cursor:pointer}
+.ctrl-btn:hover{opacity:.9}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Caro Pro Online</h1>
+  <div id="menu">
+    <button class="mode-btn" onclick="startAI()">🤖 Đấu AI</button>
+    <button class="mode-btn" onclick="start2P()">👥 2 Người</button>
+    <button class="mode-btn" onclick="showOnline()">🌍 Online</button>
+  </div>
+  <div id="online">
+    <input id="room" placeholder="Nhập mã phòng">
+    <button class="ctrl-btn" onclick="joinRoom()">Vào phòng</button>
+    <button class="ctrl-btn" onclick="createRoom()">Tạo phòng</button>
+    <div id="share" style="margin-top:10px;font-size:.9rem"></div>
+  </div>
+  <div id="score"><span>👤 X: <b id="sx">0</b></span><span id="soText">🤖 O: <b id="so">0</b></span></div>
+  <div id="info"></div>
+  <div id="board"></div>
+  <div id="control" style="display:none;margin-top:15px">
+    <button class="ctrl-btn" onclick="resetBoard()">🔄 Ván mới</button>
+    <button class="ctrl-btn" onclick="backMenu()">🏠 Menu</button>
+  </div>
+</div>
+
+<script>
+/* ====== STATE ====== */
+let board,cur,active,aiOnline,peer,conn,roomId;
+const win=[ [0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6] ];
+const $=id=>document.getElementById(id);
+const show=(id,on=true)=>$(id).style.display=on?'block':'none';
+const info=t=>$('info').textContent=t;
+
+/* ====== MENU ====== */
+function startAI(){aiOnline=false;initGame('🤖 AI đang chờ...');}
+function start2P(){aiOnline=false;initGame('👥 2 người chơi');}
+function showOnline(){show('menu',false);show('online',true);}
+function backMenu(){
+  show('menu');show('board',false);show('score',false);show('control',false);show('online',false);
+  location.hash='';if(peer)peer.destroy();peer=null;
+}
+function createRoom(){roomId=Math.random().toString(36).slice(2,8);$('room').value=roomId;joinRoom();}
+function joinRoom(){
+  roomId=$('room').value.trim().toLowerCase();if(!roomId){alert('Nhập mã phòng');return;}
+  initPeer(roomId,true);
+}
+
+/* ====== GAME ====== */
+function initGame(msg){
+  show('menu',false);show('board');show('score');show('control');
+  board=Array(9).fill('');cur='X';active=true;
+  $('board').innerHTML='';board.forEach((_,i)=>{
+    const c=document.createElement('div');c.className='cell';c.onclick=()=>clickCell(i);
+    $('board').appendChild(c);
+  });
+  updateScore();info(msg);
+}
+function clickCell(i){
+  if(!active||board[i]||(aiOnline&&cur==='O'))return;
+  move(i);
+  if(!aiOnline&&cur==='O'&&!conn)setTimeout(()=>aiMove(),400);
+  if(conn)conn.send({type:'move',i});
+}
+function move(i){
+  board[i]=cur;render();if(checkWin())return;
+  cur=cur==='X'?'O':'X';updateScore();
+}
+function render(){
+  document.querySelectorAll('.cell').forEach((c,i)=>{
+    c.textContent=board[i];c.className='cell '+(board[i]||'');
+  });
+}
+function checkWin(){
+  for(let w of win){
+    const[a,b,c]=w;if(board[a]&&board[a]===board[b]&&board[a]===board[c]){
+      w.forEach(i=>document.querySelectorAll('.cell')[i].classList.add('winner'));
+      active=false;const p=board[a];scores[p]++;updateScore();
+      info(p==='X'?'👤 Bạn thắng!':aiOnline?'👤 Đối thủ thắng!':'🤖 AI thắng!');
+      return true;
+    }
+  }
+  if(!board.includes('')){active=false;info('🤝 Hòa rồi!');return true;}
+  return false;
+}
+function updateScore(){
+  $('sx').textContent=scores.X;
+  $('so').textContent=scores.O;
+  $('soText').innerHTML=(aiOnline?'👤 O:':'🤖 O:')+' <b id="so">'+scores.O+'</b>';
+}
+
+/* ====== AI MINIMAX ====== */
+function aiMove(){
+  let best=-Infinity,move=0;
+  for(let i=0;i<9;i++){
+    if(board[i]===''){board[i]='O';let score=minimax(0,false);board[i]='';if(score>best){best=score;move=i;}}
+  }
+  move(move);
+}
+function minimax(depth,isMax){
+  const w=checkWinner();
+  if(w==='O')return 10-depth;
+  if(w==='X')return depth-10;
+  if(w==='tie')return 0;
+  if(isMax){
+    let maxE=-Infinity;
+    for(let i=0;i<9;i++){if(board[i]===''){board[i]='O';maxE=Math.max(maxE,minimax(depth+1,false));board[i]='';}}
+    return maxE;
+  }else{
+    let minE=Infinity;
+    for(let i=0;i<9;i++){if(board[i]===''){board[i]='X';minE=Math.min(minE,minimax(depth+1,true));board[i]='';}}
+    return minE;
+  }
+}
+function checkWinner(){
+  for(let w of win){const[a,b,c]=w;if(board[a]&&board[a]===board[b]&&board[a]===board[c])return board[a];}
+  return board.includes('')?null:'tie';
+}
+
+/* ====== RESET ====== */
+function resetBoard(){
+  initGame(aiOnline?'🌍 Online':'🤖 AI'+(conn?' Online':'')+' - Ván mới');
+}
+
+/* ====== P2P ONLINE ====== */
+function initPeer(room,isHost){
+  import('https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js').then(()=>{
+    peer=new Peer();
+    peer.on('open',id=>{
+      if(isHost){
+        conn=null;info('🔗 Chờ đối thủ...');
+        peer.on('connection',c=>{
+          conn=c;setupConn();
+        });
+        $('share').textContent=`🔗 Mã phòng: ${room} (gửi cho bạn bè)`;
+      }else{
+        conn=peer.connect(room);
+        setupConn();
+      }
+    });
+    peer.on('error',e=>alert('Lỗi kết nối: '+e.type));
+  });
+}
+function setupConn(){
+  conn.on('open',()=>{
+    aiOnline=true;initGame('🌍 Đã kết nối - Bạn đi trước (X)');
+  });
+  conn.on('data',d=>{
+    if(d.type==='move')move(d.i);
+  });
+  conn.on('close',()=>{alert('Đối thủ thoát');backMenu();});
+}
+</script>
+</body>
+</html>
