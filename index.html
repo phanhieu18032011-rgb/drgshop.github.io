@@ -1,182 +1,730 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Caro Pro Online</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
-:root{
-  --x:#ff4d4d;--o:#0099ff;--bg:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-  --shadow:0 10px 30px rgba(0,0,0,.25);
-}
-*{box-sizing:border-box;font-family:'Poppins',sans-serif}
-body{margin:0;height:100vh;display:flex;justify-content:center;align-items:center;background:var(--bg);color:#fff}
-#app{text-align:center;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);padding:30px;border-radius:25px;box-shadow:var(--shadow);max-width:500px;width:90%}
-h1{font-size:2.5rem;margin-bottom:15px;text-shadow:0 2px 4px rgba(0,0,0,.3)}
-.mode-btn{background:#fff;color:#667eea;border:none;padding:14px 28px;margin:8px;font-size:1rem;border-radius:30px;font-weight:700;cursor:pointer;transition:.3s}
-.mode-btn:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
-#board{display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px auto;width:min(90vw,350px)}
-.cell{background:rgba(255,255,255,.95);border-radius:15px;font-size:3rem;font-weight:700;height:100px;line-height:100px;cursor:pointer;transition:.2s}
-.cell.x{color:var(--x)}.cell.o{color:var(--o)}
-.cell.winner{background:#2ecc71;color:#fff;animation:pulse .6s infinite}
-@keyframes pulse{50%{transform:scale(1.1)}}
-#score{display:none;justify-content:space-around;margin:15px 0;font-size:1.1rem}
-#info{margin:10px 0;font-size:1.1rem}
-#online{display:none}#online input{padding:10px;border-radius:20px;border:none;margin:5px;width:180px}
-.ctrl-btn{background:#fff;color:#667eea;border:none;padding:10px 20px;margin:5px;border-radius:20px;font-weight:600;cursor:pointer}
-.ctrl-btn:hover{opacity:.9}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caro AI Boss - Game XO</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #feca57 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Hiệu ứng hạt nền */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            50% { transform: translateY(-100px) rotate(180deg); opacity: 1; }
+        }
+
+        .game-wrapper {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            max-width: 650px;
+            width: 100%;
+            transform: scale(0.95);
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        h1 {
+            font-size: 3.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        /* Menu chọn chế độ */
+        .mode-selection {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            padding: 20px 50px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s;
+        }
+
+        .mode-btn:hover::before {
+            left: 100%;
+        }
+
+        .mode-btn:nth-child(1) {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .mode-btn:nth-child(2) {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .mode-btn:active {
+            transform: translateY(-2px);
+        }
+
+        /* Thông tin game */
+        .game-info {
+            display: none;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 15px;
+            color: white;
+            font-size: 1.3em;
+            font-weight: 600;
+            animation: slideDown 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Bảng điểm */
+        .score-board {
+            display: none;
+            justify-content: space-around;
+            margin-bottom: 25px;
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .score-item {
+            padding: 15px 30px;
+            border-radius: 25px;
+            background: #f0f0f0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .score-item.active {
+            transform: scale(1.15) rotate(2deg);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        #scoreX.active { 
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24); 
+            color: white;
+            animation: playerGlow 1s infinite alternate;
+        }
+
+        #scoreO.active { 
+            background: linear-gradient(135deg, #4facfe, #00f2fe); 
+            color: white;
+            animation: playerGlow 1s infinite alternate;
+        }
+
+        @keyframes playerGlow {
+            0% { box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            100% { box-shadow: 0 0 20px rgba(255,255,255,0.9); }
+        }
+
+        /* Bàn cờ */
+        .game-board {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px auto;
+            max-width: 500px;
+            padding: 25px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 4.5em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #333;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.9), transparent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .cell:active::before {
+            width: 350px;
+            height: 350px;
+        }
+
+        .cell:hover:not(.disabled) {
+            transform: translateY(-8px) scale(1.08);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .cell.disabled {
+            cursor: not-allowed;
+        }
+
+        .cell.x {
+            color: #ff6b6b;
+            text-shadow: 3px 3px 6px rgba(255, 107, 107, 0.4);
+            animation: placeX 0.5s ease;
+        }
+
+        .cell.o {
+            color: #4facfe;
+            text-shadow: 3px 3px 6px rgba(79, 172, 254, 0.4);
+            animation: placeO 0.5s ease;
+        }
+
+        @keyframes placeX {
+            0% { transform: scale(0) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        @keyframes placeO {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .cell.winner {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            animation: winnerPulse 0.6s ease-in-out infinite;
+        }
+
+        @keyframes winnerPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px #2ecc71; }
+            50% { transform: scale(1.1); box-shadow: 0 0 40px #2ecc71; }
+        }
+
+        /* Nút điều khiển */
+        .controls {
+            display: none;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            padding: 15px 35px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-btn:nth-child(1) {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .control-btn:nth-child(2) {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:active {
+            transform: translateY(-2px);
+        }
+
+        /* Overlay khi game kết thúc */
+        .game-over-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .game-over-modal {
+            background: white;
+            padding: 50px 60px;
+            border-radius: 30px;
+            text-align: center;
+            animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.3) rotate(10deg); opacity: 0; }
+            to { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .game-over-modal h2 {
+            font-size: 3em;
+            margin-bottom: 25px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        /* Nút trong overlay */
+        .overlay-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .overlay-btn {
+            padding: 18px 40px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .overlay-btn:nth-child(2) {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .overlay-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.7);
+        }
+
+        .overlay-btn:active {
+            transform: translateY(-2px);
+        }
+
+        /* Thông báo trong overlay */
+        .game-over-modal p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 2.5em; }
+            .cell { font-size: 3em; }
+            .mode-selection { flex-direction: column; }
+            .mode-btn { width: 100%; }
+            .overlay-buttons { flex-direction: column; }
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-  <h1>Caro Pro Online</h1>
-  <div id="menu">
-    <button class="mode-btn" onclick="startAI()">🤖 Đấu AI</button>
-    <button class="mode-btn" onclick="start2P()">👥 2 Người</button>
-    <button class="mode-btn" onclick="showOnline()">🌍 Online</button>
-  </div>
-  <div id="online">
-    <input id="room" placeholder="Nhập mã phòng">
-    <button class="ctrl-btn" onclick="joinRoom()">Vào phòng</button>
-    <button class="ctrl-btn" onclick="createRoom()">Tạo phòng</button>
-    <div id="share" style="margin-top:10px;font-size:.9rem"></div>
-  </div>
-  <div id="score"><span>👤 X: <b id="sx">0</b></span><span id="soText">🤖 O: <b id="so">0</b></span></div>
-  <div id="info"></div>
-  <div id="board"></div>
-  <div id="control" style="display:none;margin-top:15px">
-    <button class="ctrl-btn" onclick="resetBoard()">🔄 Ván mới</button>
-    <button class="ctrl-btn" onclick="backMenu()">🏠 Menu</button>
-  </div>
-</div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="game-wrapper">
+        <h1>🎮 Caro AI Boss</h1>
+        
+        <div class="mode-selection" id="modeSelection">
+            <button class="mode-btn" onclick="startGame(1)">🤖 Đấu với AI</button>
+            <button class="mode-btn" onclick="startGame(2)">👥 Đấu với Người</button>
+        </div>
 
-<script>
-/* ====== STATE ====== */
-let board,cur,active,aiOnline,peer,conn,roomId;
-const win=[ [0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6] ];
-const $=id=>document.getElementById(id);
-const show=(id,on=true)=>$(id).style.display=on?'block':'none';
-const info=t=>$('info').textContent=t;
+        <div class="game-info" id="gameInfo"></div>
 
-/* ====== MENU ====== */
-function startAI(){aiOnline=false;initGame('🤖 AI đang chờ...');}
-function start2P(){aiOnline=false;initGame('👥 2 người chơi');}
-function showOnline(){show('menu',false);show('online',true);}
-function backMenu(){
-  show('menu');show('board',false);show('score',false);show('control',false);show('online',false);
-  location.hash='';if(peer)peer.destroy();peer=null;
-}
-function createRoom(){roomId=Math.random().toString(36).slice(2,8);$('room').value=roomId;joinRoom();}
-function joinRoom(){
-  roomId=$('room').value.trim().toLowerCase();if(!roomId){alert('Nhập mã phòng');return;}
-  initPeer(roomId,true);
-}
+        <div class="score-board" id="scoreBoard">
+            <div class="score-item active" id="scoreX">👤 X: 0</div>
+            <div class="score-item" id="scoreO">🤖 O: 0</div>
+        </div>
 
-/* ====== GAME ====== */
-function initGame(msg){
-  show('menu',false);show('board');show('score');show('control');
-  board=Array(9).fill('');cur='X';active=true;
-  $('board').innerHTML='';board.forEach((_,i)=>{
-    const c=document.createElement('div');c.className='cell';c.onclick=()=>clickCell(i);
-    $('board').appendChild(c);
-  });
-  updateScore();info(msg);
-}
-function clickCell(i){
-  if(!active||board[i]||(aiOnline&&cur==='O'))return;
-  move(i);
-  if(!aiOnline&&cur==='O'&&!conn)setTimeout(()=>aiMove(),400);
-  if(conn)conn.send({type:'move',i});
-}
-function move(i){
-  board[i]=cur;render();if(checkWin())return;
-  cur=cur==='X'?'O':'X';updateScore();
-}
-function render(){
-  document.querySelectorAll('.cell').forEach((c,i)=>{
-    c.textContent=board[i];c.className='cell '+(board[i]||'');
-  });
-}
-function checkWin(){
-  for(let w of win){
-    const[a,b,c]=w;if(board[a]&&board[a]===board[b]&&board[a]===board[c]){
-      w.forEach(i=>document.querySelectorAll('.cell')[i].classList.add('winner'));
-      active=false;const p=board[a];scores[p]++;updateScore();
-      info(p==='X'?'👤 Bạn thắng!':aiOnline?'👤 Đối thủ thắng!':'🤖 AI thắng!');
-      return true;
-    }
-  }
-  if(!board.includes('')){active=false;info('🤝 Hòa rồi!');return true;}
-  return false;
-}
-function updateScore(){
-  $('sx').textContent=scores.X;
-  $('so').textContent=scores.O;
-  $('soText').innerHTML=(aiOnline?'👤 O:':'🤖 O:')+' <b id="so">'+scores.O+'</b>';
-}
+        <div class="game-board" id="gameBoard"></div>
 
-/* ====== AI MINIMAX ====== */
-function aiMove(){
-  let best=-Infinity,move=0;
-  for(let i=0;i<9;i++){
-    if(board[i]===''){board[i]='O';let score=minimax(0,false);board[i]='';if(score>best){best=score;move=i;}}
-  }
-  move(move);
-}
-function minimax(depth,isMax){
-  const w=checkWinner();
-  if(w==='O')return 10-depth;
-  if(w==='X')return depth-10;
-  if(w==='tie')return 0;
-  if(isMax){
-    let maxE=-Infinity;
-    for(let i=0;i<9;i++){if(board[i]===''){board[i]='O';maxE=Math.max(maxE,minimax(depth+1,false));board[i]='';}}
-    return maxE;
-  }else{
-    let minE=Infinity;
-    for(let i=0;i<9;i++){if(board[i]===''){board[i]='X';minE=Math.min(minE,minimax(depth+1,true));board[i]='';}}
-    return minE;
-  }
-}
-function checkWinner(){
-  for(let w of win){const[a,b,c]=w;if(board[a]&&board[a]===board[b]&&board[a]===board[c])return board[a];}
-  return board.includes('')?null:'tie';
-}
+        <div class="controls" id="controls">
+            <button class="control-btn" onclick="restartGame()">🔄 Ván Mới</button>
+            <button class="control-btn" onclick="backToMenu()">🏠 Menu</button>
+        </div>
+    </div>
 
-/* ====== RESET ====== */
-function resetBoard(){
-  initGame(aiOnline?'🌍 Online':'🤖 AI'+(conn?' Online':'')+' - Ván mới');
-}
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-modal">
+            <h2 id="gameOverMessage"></h2>
+            <p>Bạn muốn làm gì tiếp theo?</p>
+            <div class="overlay-buttons">
+                <button class="overlay-btn" onclick="restartGame()">🔄 Ván Mới</button>
+                <button class="overlay-btn" onclick="backToMenu()">🏠 Về Menu</button>
+            </div>
+        </div>
+    </div>
 
-/* ====== P2P ONLINE ====== */
-function initPeer(room,isHost){
-  import('https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js').then(()=>{
-    peer=new Peer();
-    peer.on('open',id=>{
-      if(isHost){
-        conn=null;info('🔗 Chờ đối thủ...');
-        peer.on('connection',c=>{
-          conn=c;setupConn();
-        });
-        $('share').textContent=`🔗 Mã phòng: ${room} (gửi cho bạn bè)`;
-      }else{
-        conn=peer.connect(room);
-        setupConn();
-      }
-    });
-    peer.on('error',e=>alert('Lỗi kết nối: '+e.type));
-  });
-}
-function setupConn(){
-  conn.on('open',()=>{
-    aiOnline=true;initGame('🌍 Đã kết nối - Bạn đi trước (X)');
-  });
-  conn.on('data',d=>{
-    if(d.type==='move')move(d.i);
-  });
-  conn.on('close',()=>{alert('Đối thủ thoát');backMenu();});
-}
-</script>
+    <script>
+        // Tạo hiệu ứng hạt nền
+        function createParticles() {
+            const container = document.getElementById('particles');
+            container.innerHTML = '';
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // Trạng thái game
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = false;
+        let gameMode = 0;
+        let scores = { X: 0, O: 0 };
+        let isAIThinking = false;
+        
+        // Các điều kiện thắng
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        // Bắt đầu game
+        function startGame(mode) {
+            gameMode = mode;
+            gameActive = true;
+            
+            document.getElementById('modeSelection').style.display = 'none';
+            document.getElementById('gameBoard').style.display = 'grid';
+            document.getElementById('controls').style.display = 'flex';
+            document.getElementById('scoreBoard').style.display = 'flex';
+            document.getElementById('gameInfo').style.display = 'block';
+            
+            if (mode === 1) {
+                document.getElementById('gameInfo').textContent = '🤖 Chế độ: Người vs AI Boss';
+                document.getElementById('scoreO').innerHTML = '🤖 O: 0';
+            } else {
+                document.getElementById('gameInfo').textContent = '👥 Chế độ: Người vs Người';
+                document.getElementById('scoreO').innerHTML = '👤 O: 0';
+            }
+            
+            initBoard();
+            updateScore();
+            updatePlayerHighlight();
+        }
+
+        // Khởi tạo bàn cờ
+        function initBoard() {
+            const gameBoard = document.getElementById('gameBoard');
+            gameBoard.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('button');
+                cell.classList.add('cell');
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', handleCellClick);
+                gameBoard.appendChild(cell);
+            }
+        }
+
+        // Xử lý click
+        function handleCellClick(event) {
+            if (isAIThinking) return;
+            
+            const clickedCell = event.target;
+            const index = parseInt(clickedCell.getAttribute('data-index'));
+            
+            if (board[index] !== '' || !gameActive) return;
+            
+            makeMove(index);
+            
+            // AI đánh sau người chơi
+            if (gameMode === 1 && gameActive && currentPlayer === 'O') {
+                setTimeout(() => aiMoveMinimax(), 600);
+            }
+        }
+
+        // Thực hiện nước đi
+        function makeMove(index) {
+            board[index] = currentPlayer;
+            const cell = document.querySelector(`[data-index="${index}"]`);
+            cell.textContent = currentPlayer;
+            cell.classList.add('disabled', currentPlayer.toLowerCase());
+            
+            checkResult();
+            
+            if (gameActive) {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                updatePlayerHighlight();
+            }
+        }
+
+        // AI sử dụng thuật toán Minimax - KHÔNG THỂ THUA
+        function aiMoveMinimax() {
+            isAIThinking = true;
+            document.getElementById('gameInfo').textContent = '🤖 AI Boss đang phân tích...';
+            
+            setTimeout(() => {
+                const bestMove = getBestMove();
+                makeMove(bestMove);
+                document.getElementById('gameInfo').textContent = '🤖 Chế độ: Người vs AI Boss';
+                isAIThinking = false;
+            }, 1000);
+        }
+
+        // Tìm nước đi tối ưu với Minimax
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let move = 0;
+            
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = 'O';
+                    let score = minimax(board, 0, false);
+                    board[i] = '';
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
+                }
+            }
+            return move;
+        }
+
+        // Thuật toán Minimax
+        function minimax(board, depth, isMaximizing) {
+            const result = checkWinner(board);
+            if (result !== null) {
+                if (result === 'O') return 10 - depth;
+                if (result === 'X') return depth - 10;
+                return 0;
+            }
+
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'O';
+                        let eval = minimax(board, depth + 1, false);
+                        board[i] = '';
+                        maxEval = Math.max(maxEval, eval);
+                    }
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'X';
+                        let eval = minimax(board, depth + 1, true);
+                        board[i] = '';
+                        minEval = Math.min(minEval, eval);
+                    }
+                }
+                return minEval;
+            }
+        }
+
+        // Kiểm tra người thắng cho Minimax
+        function checkWinner(board) {
+            for (let condition of winConditions) {
+                const [a, b, c] = condition;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            
+            if (!board.includes('')) return 'tie';
+            return null;
+        }
+
+        // Kiểm tra kết quả game thực tế
+        function checkResult() {
+            for (let condition of winConditions) {
+                const [a, b, c] = condition;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    endGame(`${board[a] === 'X' ? '👤' : '🤖'} ${board[a] === 'X' ? 'Bạn' : 'AI Boss'} thắng!`);
+                    highlightWinningCells(condition);
+                    scores[board[a]]++;
+                    updateScore();
+                    return;
+                }
+            }
+
+            if (!board.includes('')) {
+                endGame('🤝 Hòa rồi! AI Boss bị cầm chân!');
+                return;
+            }
+        }
+
+        // Kết thúc game
+        function endGame(message) {
+            gameActive = false;
+            document.getElementById('gameOverMessage').textContent = message;
+            document.getElementById('gameOverOverlay').style.display = 'flex';
+        }
+
+        // Đóng overlay
+        function closeOverlay() {
+            document.getElementById('gameOverOverlay').style.display = 'none';
+        }
+
+        // Làm nổi bật ô thắng
+        function highlightWinningCells(cells) {
+            cells.forEach(index => {
+                document.querySelector(`[data-index="${index}"]`).classList.add('winner');
+            });
+        }
+
+        // Cập nhật điểm
+        function updateScore() {
+            document.getElementById('scoreX').textContent = `👤 X: ${scores.X}`;
+            document.getElementById('scoreO').textContent = 
+                `${gameMode === 1 ? '🤖' : '👤'} O: ${scores.O}`;
+        }
+
+        // Cập nhật người chơi đang đánh
+        function updatePlayerHighlight() {
+            const scoreX = document.getElementById('scoreX');
+            const scoreO = document.getElementById('scoreO');
+            
+            if (currentPlayer === 'X') {
+                scoreX.classList.add('active');
+                scoreO.classList.remove('active');
+            } else {
+                scoreO.classList.add('active');
+                scoreX.classList.remove('active');
+            }
+        }
+
+        // Ván mới
+        function restartGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            isAIThinking = false;
+            
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('disabled', 'winner', 'x', 'o');
+            });
+            
+            updatePlayerHighlight();
+            closeOverlay();
+            document.getElementById('gameInfo').textContent = 
+                gameMode === 1 ? '🤖 Chế độ: Người vs AI Boss' : '👥 Chế độ: Người vs Người';
+            
+            // Tạo lại hạt nền cho hiệu ứng mới
+            createParticles();
+        }
+
+        // Về menu
+        function backToMenu() {
+            // Reset tất cả về mặc định
+            scores = { X: 0, O: 0 };
+            restartGame();
+            
+            // Ẩn game, hiện menu
+            document.getElementById('gameBoard').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('scoreBoard').style.display = 'none';
+            document.getElementById('gameInfo').style.display = 'none';
+            document.getElementById('modeSelection').style.display = 'flex';
+            
+            // Reset lại nội dung O
+            document.getElementById('scoreO').innerHTML = '🤖 O: 0';
+        }
+    </script>
 </body>
 </html>
