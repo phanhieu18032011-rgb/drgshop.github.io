@@ -414,7 +414,7 @@
     <div class="particles" id="particles"></div>
     
     <div class="game-wrapper">
-        <h1>🎮 Caro AI Boss</h1>
+        <h1>🎮 Caro by HieuDRG</h1>
         
         <div class="mode-selection" id="modeSelection">
             <button class="mode-btn" onclick="startGame(1)">đánh online</button>
@@ -439,7 +439,7 @@
     <div class="game-over-overlay" id="gameOverOverlay">
         <div class="game-over-modal">
             <h2 id="gameOverMessage"></h2>
-            <p>Bạn muốn làm gì tiếp theo?</p>
+            <p>PHÁT TRIỂN BỞI HieuDRG</p>
             <div class="overlay-buttons">
                 <button class="overlay-btn" onclick="restartGame()">🔄 Ván Mới</button>
                 <button class="overlay-btn" onclick="backToMenu()">🏠 Về Menu</button>
@@ -557,7 +557,7 @@
             setTimeout(() => {
                 const bestMove = getBestMove();
                 makeMove(bestMove);
-                document.getElementById('gameInfo').textContent = '🤖 Chế độ: online';
+                document.getElementById('gameInfo').textContent = ' Chế độ: online';
                 isAIThinking = false;
             }, 1000);
         }
@@ -634,7 +634,7 @@
             for (let condition of winConditions) {
                 const [a, b, c] = condition;
                 if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                    endGame(`${board[a] === 'X' ? '👤' : '🤖'} ${board[a] === 'X' ? 'Bạn' : 'AI Boss'} thắng!`);
+                    endGame(`${board[a] === 'X' ? '👤' : '🤖'} ${board[a] === 'X' ? 'Bạn' : 'Đối thủ'} thắng!`);
                     highlightWinningCells(condition);
                     scores[board[a]]++;
                     updateScore();
