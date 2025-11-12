@@ -417,15 +417,15 @@
         <h1>🎮 Caro AI Boss</h1>
         
         <div class="mode-selection" id="modeSelection">
-            <button class="mode-btn" onclick="startGame(1)">🤖 Đấu với AI</button>
-            <button class="mode-btn" onclick="startGame(2)">👥 Đấu với Người</button>
+            <button class="mode-btn" onclick="startGame(1)">đánh online</button>
+            <button class="mode-btn" onclick="startGame(2)">đánh 2 người</button>
         </div>
 
         <div class="game-info" id="gameInfo"></div>
 
         <div class="score-board" id="scoreBoard">
-            <div class="score-item active" id="scoreX">👤 X: 0</div>
-            <div class="score-item" id="scoreO">🤖 O: 0</div>
+            <div class="score-item active" id="scoreX">you X: 0</div>
+            <div class="score-item" id="scoreO">đối thủ O: 0</div>
         </div>
 
         <div class="game-board" id="gameBoard"></div>
@@ -491,8 +491,8 @@
             document.getElementById('gameInfo').style.display = 'block';
             
             if (mode === 1) {
-                document.getElementById('gameInfo').textContent = '🤖 Chế độ: Người vs AI Boss';
-                document.getElementById('scoreO').innerHTML = '🤖 O: 0';
+                document.getElementById('gameInfo').textContent = ' Chế độ: Online';
+                document.getElementById('scoreO').innerHTML = ' O: 0';
             } else {
                 document.getElementById('gameInfo').textContent = '👥 Chế độ: Người vs Người';
                 document.getElementById('scoreO').innerHTML = '👤 O: 0';
@@ -552,12 +552,12 @@
         // AI sử dụng thuật toán Minimax - KHÔNG THỂ THUA
         function aiMoveMinimax() {
             isAIThinking = true;
-            document.getElementById('gameInfo').textContent = '🤖 AI Boss đang phân tích...';
+            document.getElementById('gameInfo').textContent = 'chờ đối thủ...';
             
             setTimeout(() => {
                 const bestMove = getBestMove();
                 makeMove(bestMove);
-                document.getElementById('gameInfo').textContent = '🤖 Chế độ: Người vs AI Boss';
+                document.getElementById('gameInfo').textContent = '🤖 Chế độ: online';
                 isAIThinking = false;
             }, 1000);
         }
@@ -643,7 +643,7 @@
             }
 
             if (!board.includes('')) {
-                endGame('🤝 Hòa rồi! AI Boss bị cầm chân!');
+                endGame('🤝 Hòa rồi!!');
                 return;
             }
         }
@@ -703,7 +703,7 @@
             updatePlayerHighlight();
             closeOverlay();
             document.getElementById('gameInfo').textContent = 
-                gameMode === 1 ? '🤖 Chế độ: Người vs AI Boss' : '👥 Chế độ: Người vs Người';
+                gameMode === 1 ? ' Chế độ: online' : '👥 Chế độ: Người vs Người';
             
             // Tạo lại hạt nền cho hiệu ứng mới
             createParticles();
